@@ -3,7 +3,7 @@ use ethers_core::types::{Address, H256};
 use serde::{Deserialize, Serialize};
 
 // Struct for the message
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize , Clone)]
 pub struct Attest {
     pub version: u16,
     pub schema: H256,
@@ -66,3 +66,5 @@ pub struct MessageData {
     pub data: String,
     pub salt: String,
 }
+
+fn main (){}

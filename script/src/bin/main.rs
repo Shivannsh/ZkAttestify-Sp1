@@ -19,7 +19,7 @@ use fibonacci_lib::PublicValuesStruct;
 use sp1_sdk::{ProverClient, SP1Stdin};
 use std::fs;
 use structs::{Attest, InputData};
-use ethers_core::types::H160;
+use ethers_core::types::{H160 , Signature , H256};
 use helper::domain_separator;
 
 /// The ELF (executable and linkable format) file for the Succinct RISC-V zkVM.
@@ -34,9 +34,6 @@ struct Args {
 
     #[clap(long)]
     prove: bool,
-
-    #[clap(long, default_value = "20")]
-    n: u32,
 }
 
 fn main() {
@@ -52,31 +49,31 @@ fn main() {
     }
 // ------------------------------------------------------------------------------------------------------------------------------------------------
 
-    let json_str = fs::read_to_string("./input.json")?;
-    let input_data: InputData = serde_json::from_str(&json_str)?;
+    let json_str = fs::read_to_string("./input.json").unwrap();
+    let input_data: InputData = serde_json::from_str(&json_str).unwrap();
 
     let domain = ethers_core::types::transaction::eip712::EIP712Domain {
         name: Some(input_data.sig.domain.name),
         version: Some(input_data.sig.domain.version),
         chain_id: Some(ethers_core::types::U256::from_dec_str(
             &input_data.sig.domain.chain_id,
-        )?),
-        verifying_contract: Some(input_data.sig.domain.verifying_contract.parse()?),
+        ).unwrap()),
+        verifying_contract: Some(input_data.sig.domain.verifying_contract.parse().unwrap()),
         salt: None,
     };
 
-    let signer_address: H160 = input_data.signer.parse()?;
+    let signer_address: H160 = input_data.signer.parse().unwrap();
 
     let message = Attest {
         version: input_data.sig.message.version,
-        schema: input_data.sig.message.schema.parse()?,
-        recipient: input_data.sig.message.recipient.parse()?,
-        time: input_data.sig.message.time.parse()?,
-        expiration_time: input_data.sig.message.expiration_time.parse()?,
+        schema: input_data.sig.message.schema.parse().unwrap(),
+        recipient: input_data.sig.message.recipient.parse().unwrap(),
+        time: input_data.sig.message.time.parse().unwrap(),
+        expiration_time: input_data.sig.message.expiration_time.parse().unwrap(),
         revocable: input_data.sig.message.revocable,
-        ref_uid: input_data.sig.message.ref_uid.parse()?,
-        data: ethers_core::utils::hex::decode(&input_data.sig.message.data[2..])?,
-        salt: input_data.sig.message.salt.parse()?,
+        ref_uid: input_data.sig.message.ref_uid.parse().unwrap(),
+        data: ethers_core::utils::hex::decode(&input_data.sig.message.data[2..]).unwrap(),
+        salt: input_data.sig.message.salt.parse().unwrap(),
     };
 
     // Calculate the current timestamp and the threshold age
@@ -94,10 +91,18 @@ fn main() {
 
     // Parse the signature
     let signature = ethers_core::types::Signature {
-        r: input_data.sig.signature.r.parse()?,
-        s: input_data.sig.signature.s.parse()?,
+        r: input_data.sig.signature.r.parse().unwrap(),
+        s: input_data.sig.signature.s.parse().unwrap(),
         v: input_data.sig.signature.v.into(),
     };
+
+    // let input: (&H160, &Signature, &u64, &u64, H256) = (
+    //     &signer_address,
+    //     &signature,
+    //     &threshold_age,
+    //     &current_timestamp,
+    //     domain_separator,
+    // );
 
 // ------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -106,9 +111,12 @@ fn main() {
 
     // Setup the inputs.
     let mut stdin = SP1Stdin::new();
-    stdin.write(&args.n);
-
-    println!("n: {}", args.n);
+    stdin.write(&signer_address);
+    stdin.write(&signature);
+    stdin.write(&threshold_age);
+    stdin.write(&current_timestamp);
+    stdin.write(&message);
+    stdin.write(&domain_separator);
 
     if args.execute {
         // Execute the program
@@ -116,16 +124,16 @@ fn main() {
         println!("Program executed successfully.");
 
         // Read the output.
-        let decoded = PublicValuesStruct::abi_decode(output.as_slice(), true).unwrap();
-        let PublicValuesStruct { n, a, b } = decoded;
-        println!("n: {}", n);
-        println!("a: {}", a);
-        println!("b: {}", b);
+        // let decoded = PublicValuesStruct::abi_decode(output.as_slice(), true).unwrap();
+        // let PublicValuesStruct { n, a, b } = decoded;
+        // println!("n: {}", n);
+        // println!("a: {}", a);
+        // println!("b: {}", b);
 
-        let (expected_a, expected_b) = fibonacci_lib::fibonacci(n);
-        assert_eq!(a, expected_a);
-        assert_eq!(b, expected_b);
-        println!("Values are correct!");
+        // let (expected_a, expected_b) = fibonacci_lib::fibonacci(n);
+        // assert_eq!(a, expected_a);
+        // assert_eq!(b, expected_b);
+        // println!("Values are correct!");
 
         // Record the number of cycles executed.
         println!("Number of cycles: {}", report.total_instruction_count());

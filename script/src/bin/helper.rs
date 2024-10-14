@@ -14,3 +14,5 @@ pub fn domain_separator(domain: &EIP712Domain, type_hash: H256) -> H256 {
     ]);
     keccak256(&encoded).into()
 }
+
+fn main () {}
