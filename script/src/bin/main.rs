@@ -49,7 +49,7 @@ fn main() {
     }
 // ------------------------------------------------------------------------------------------------------------------------------------------------
 
-    let json_str = fs::read_to_string("./input.json").unwrap();
+    let json_str = fs::read_to_string("/Users/shivanshgupta/ZkAttestify-Sp1/script/src/bin/input.json").unwrap();
     let input_data: InputData = serde_json::from_str(&json_str).unwrap();
 
     let domain = ethers_core::types::transaction::eip712::EIP712Domain {
@@ -124,17 +124,16 @@ fn main() {
         println!("Program executed successfully.");
 
         // Read the output.
-        // let decoded = PublicValuesStruct::abi_decode(output.as_slice(), true).unwrap();
-        // let PublicValuesStruct { n, a, b } = decoded;
-        // println!("n: {}", n);
-        // println!("a: {}", a);
-        // println!("b: {}", b);
+        let decoded = PublicValuesStruct::abi_decode(output.as_slice(), true).unwrap();
+        let PublicValuesStruct { signer_address, current_timestamp , threshold_age , attest_time , receipent_address , domain_seperator } = decoded;
+        println!("Signer Address: {:?}", signer_address);
+        println!("Current Timestamp: {:?}", current_timestamp);
+        println!("Threshold Age: {:?}", threshold_age);
+        println!("Attest Time: {:?}", attest_time);
+        println!("Receipent Address: {:?}", receipent_address);
+        println!("Domain Seperator: {:?}", domain_seperator);
 
-        // let (expected_a, expected_b) = fibonacci_lib::fibonacci(n);
-        // assert_eq!(a, expected_a);
-        // assert_eq!(b, expected_b);
-        // println!("Values are correct!");
-
+      
         // Record the number of cycles executed.
         println!("Number of cycles: {}", report.total_instruction_count());
     } else {

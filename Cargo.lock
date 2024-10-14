@@ -1739,7 +1739,10 @@ name = "fibonacci-program"
 version = "0.1.0"
 dependencies = [
  "alloy-sol-types",
+ "chrono",
+ "ethers-core",
  "fibonacci-lib",
+ "serde",
  "sp1-zkvm",
 ]
 
