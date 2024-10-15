@@ -143,13 +143,15 @@ fn main() {
         // Generate the proof
         let proof = client
             .prove(&pk, stdin)
+            .groth16()
             .run()
             .expect("failed to generate proof");
 
         println!("Successfully generated proof!");
+        
 
         // Verify the proof.
-        client.verify(&proof, &vk).expect("failed to verify proof");
+        client.verify(&proof, &vk).expect("failed to verify proof");    
         println!("Successfully verified proof!");
     }
 }
