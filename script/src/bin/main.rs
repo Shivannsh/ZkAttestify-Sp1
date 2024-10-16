@@ -148,10 +148,9 @@ fn main() {
             .expect("failed to generate proof");
 
         println!("Successfully generated proof!");
-        
-
         // Verify the proof.
-        client.verify(&proof, &vk).expect("failed to verify proof");    
+        client.verify(&proof, &vk).expect("failed to verify proof");   
+        proof.save("proof.bin").unwrap();
         println!("Successfully verified proof!");
     }
 }

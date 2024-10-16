@@ -2,7 +2,7 @@
 members = [
     "lib",
     "program",
-    "script",
+    "script", "wasm",
 ]
 resolver = "2"
 
