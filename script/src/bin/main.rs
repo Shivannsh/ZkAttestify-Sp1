@@ -49,7 +49,7 @@ fn main() {
     }
 // ------------------------------------------------------------------------------------------------------------------------------------------------
 
-    let json_str = fs::read_to_string("/Users/shivanshgupta/ZkAttestify-Sp1/script/src/bin/input.json").unwrap();
+    let json_str = fs::read_to_string("./input.json").unwrap();
     let input_data: InputData = serde_json::from_str(&json_str).unwrap();
 
     let domain = ethers_core::types::transaction::eip712::EIP712Domain {
@@ -143,7 +143,6 @@ fn main() {
         // Generate the proof
         let proof = client
             .prove(&pk, stdin)
-            .groth16()
             .run()
             .expect("failed to generate proof");
 
