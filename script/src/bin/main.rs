@@ -1,26 +1,14 @@
-//! An end-to-end example of using the SP1 SDK to generate a proof of a program that can be executed
-//! or have a core proof generated.
-//!
-//! You can run this script using the following command:
-//! ```shell
-//! RUST_LOG=info cargo run --release -- --execute
-//! ```
-//! or
-//! ```shell
-//! RUST_LOG=info cargo run --release -- --prove
-//! ```
-
-mod structs;
 mod helper;
+mod structs;
 
 use alloy_sol_types::SolType;
 use clap::Parser;
+use ethers_core::types::{Signature, H160, H256};
 use fibonacci_lib::PublicValuesStruct;
-use sp1_sdk::{ProverClient, SP1Stdin};
+use helper::domain_separator;
+use sp1_sdk::{HashableKey, ProverClient, SP1ProofWithPublicValues, SP1Stdin};
 use std::fs;
 use structs::{Attest, InputData};
-use ethers_core::types::{H160 , Signature , H256};
-use helper::domain_separator;
 
 /// The ELF (executable and linkable format) file for the Succinct RISC-V zkVM.
 pub const ADDRESS_ELF: &[u8] = include_bytes!("../../../elf/riscv32im-succinct-zkvm-elf");
@@ -47,17 +35,19 @@ fn main() {
         eprintln!("Error: You must specify either --execute or --prove");
         std::process::exit(1);
     }
-// ------------------------------------------------------------------------------------------------------------------------------------------------
+    // ------------------------------------------------------------------------------------------------------------------------------------------------
 
-    let json_str = fs::read_to_string("/Users/shivanshgupta/ZkAttestify-Sp1/script/src/bin/input.json").unwrap();
+    let json_str =
+        fs::read_to_string("/home/whoisgautxm/Desktop/ZkAttestify-Sp1/script/src/bin/input.json")
+            .unwrap();
     let input_data: InputData = serde_json::from_str(&json_str).unwrap();
 
     let domain = ethers_core::types::transaction::eip712::EIP712Domain {
         name: Some(input_data.sig.domain.name),
         version: Some(input_data.sig.domain.version),
-        chain_id: Some(ethers_core::types::U256::from_dec_str(
-            &input_data.sig.domain.chain_id,
-        ).unwrap()),
+        chain_id: Some(
+            ethers_core::types::U256::from_dec_str(&input_data.sig.domain.chain_id).unwrap(),
+        ),
         verifying_contract: Some(input_data.sig.domain.verifying_contract.parse().unwrap()),
         salt: None,
     };
@@ -104,7 +94,7 @@ fn main() {
     //     domain_separator,
     // );
 
-// ------------------------------------------------------------------------------------------------------------------------------------------------
+    // ------------------------------------------------------------------------------------------------------------------------------------------------
 
     // Setup the prover client.
     let client = ProverClient::new();
@@ -125,7 +115,14 @@ fn main() {
 
         // Read the output.
         let decoded = PublicValuesStruct::abi_decode(output.as_slice(), true).unwrap();
-        let PublicValuesStruct { signer_address, current_timestamp , threshold_age , attest_time , receipent_address , domain_seperator } = decoded;
+        let PublicValuesStruct {
+            signer_address,
+            current_timestamp,
+            threshold_age,
+            attest_time,
+            receipent_address,
+            domain_seperator,
+        } = decoded;
         println!("Signer Address: {:?}", signer_address);
         println!("Current Timestamp: {:?}", current_timestamp);
         println!("Threshold Age: {:?}", threshold_age);
@@ -133,24 +130,52 @@ fn main() {
         println!("Receipent Address: {:?}", receipent_address);
         println!("Domain Seperator: {:?}", domain_seperator);
 
-      
         // Record the number of cycles executed.
         println!("Number of cycles: {}", report.total_instruction_count());
     } else {
         // Setup the program for proving.
         let (pk, vk) = client.setup(ADDRESS_ELF);
-
         // Generate the proof
         let proof = client
             .prove(&pk, stdin)
-            .groth16()
             .run()
             .expect("failed to generate proof");
 
+        // Test a round trip of proof serialization and deserialization.
+        proof
+            .save("proof.bin")
+            .expect("saving proof failed");
         println!("Successfully generated proof!");
+
         // Verify the proof.
-        client.verify(&proof, &vk).expect("failed to verify proof");   
-        proof.save("proof.bin").unwrap();
+       
+        client.verify(&proof, &vk).expect("verification failed");
         println!("Successfully verified proof!");
+
+        // Printing the vkey
+        let vk_bytes32 = vk.bytes32();
+        println!("vk_bytes32: {:?}", vk_bytes32);
+
+        // Printing the public values
+        let deserialized_proof =
+            SP1ProofWithPublicValues::load("/home/whoisgautxm/Desktop/ZkAttestify-Sp1/script/proof.bin").expect("loading proof failed");
+        let public_inputs = deserialized_proof.public_values;
+        let decoded = PublicValuesStruct::abi_decode(public_inputs.as_slice(), true).unwrap();
+        let PublicValuesStruct {
+            signer_address,
+            current_timestamp,
+            threshold_age,
+            attest_time,
+            receipent_address,
+            domain_seperator,
+        } = decoded;
+        println!("Signer Address: {:?}", signer_address);
+        println!("Current Timestamp: {:?}", current_timestamp);
+        println!("Threshold Age: {:?}", threshold_age);
+        println!("Attest Time: {:?}", attest_time);
+        println!("Receipent Address: {:?}", receipent_address);
+        println!("Domain Seperator: {:?}", domain_seperator);
+
+     
     }
 }
