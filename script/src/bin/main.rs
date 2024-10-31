@@ -37,9 +37,7 @@ fn main() {
     }
     // ------------------------------------------------------------------------------------------------------------------------------------------------
 
-    let json_str =
-        fs::read_to_string("/home/whoisgautxm/Desktop/ZkAttestify-Sp1/script/src/bin/input.json")
-            .unwrap();
+    let json_str = fs::read_to_string("./input.json").unwrap();
     let input_data: InputData = serde_json::from_str(&json_str).unwrap();
 
     let domain = ethers_core::types::transaction::eip712::EIP712Domain {
@@ -85,14 +83,6 @@ fn main() {
         s: input_data.sig.signature.s.parse().unwrap(),
         v: input_data.sig.signature.v.into(),
     };
-
-    // let input: (&H160, &Signature, &u64, &u64, H256) = (
-    //     &signer_address,
-    //     &signature,
-    //     &threshold_age,
-    //     &current_timestamp,
-    //     domain_separator,
-    // );
 
     // ------------------------------------------------------------------------------------------------------------------------------------------------
 
